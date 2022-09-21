@@ -39,6 +39,8 @@ if csv:
     #creating and displaying a df with only selected products (filter)
     df = df.loc[df["ProductCode"].isin(selected_products)]
     df = df.reset_index(drop=True)
+    #Allow the description to only have a length of 40 characters
+    df["Name"] = df["Name"].str[:37]
     
     #displaying the new dataframe with only selected products for verification by user
     st.dataframe(df)
