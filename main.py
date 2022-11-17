@@ -10,10 +10,20 @@ st.header("DasKasas Tag Tool")
 #requesting tag sizes and csv file from user in the sidebar
 with st.sidebar:
     csv = st.file_uploader("Please Upload Updated CSV Export from DEAR Inventory.")
+    portrait_landscape = st.radio("Please select the orientation of the tags.", ("Portrait", "Landscape"))
+    if portrait_landscape == "Portrait":
+        portrait_landscape = "P"
+    else:
+        portrait_landscape = "L"
+    auto_max_characters = st.checkbox("Auto Max Characters")
     tag_height = st.number_input("Tag Height (mm)", min_value=0, max_value=100, value=34)/3
     tag_width = st.number_input("Tag Width (mm)", min_value=0, max_value=100, value=60)
     font_size = st.number_input("Font Size", min_value=8, max_value=100, value=8)
-    max_characters = st.number_input("Max Characters", min_value=37, max_value=60, value=37)
+    if not auto_max_characters:
+        max_characters = st.number_input("Max Characters", min_value=18, max_value=60, value=37)
+    else:
+        # set max characters so that text fits on tag
+        max_characters = int(tag_width / (font_size* 0.20))
 
 #if a csv has been uploaded load the csv as a pandas df and display it for verification by user
 if csv:
@@ -45,13 +55,11 @@ if csv:
 
     if button:
         # instantiation of inherited class 
-        pdf = FPDF(unit= "mm", format = "A4")
+        pdf = FPDF(unit= "mm", format = "A4", orientation = portrait_landscape)
 
         #creating a blank page and setting font
-        pdf.add_page("L")
+        pdf.add_page(portrait_landscape)
         pdf.set_font('Arial', 'B', font_size)
-
-        #Creating the cells
 
         #getting initial x coordinate
         x_initial = pdf.get_x()
