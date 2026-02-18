@@ -13,10 +13,12 @@ export default function CSVUploader({ onFileUpload, isLoading }: CSVUploaderProp
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('File selected:', file?.name);
     if (file && file.name.endsWith('.csv')) {
       setFileName(file.name);
       onFileUpload(file);
     } else {
+      console.error('Invalid file type');
       alert('Please upload a valid CSV file');
     }
   };
@@ -35,10 +37,12 @@ export default function CSVUploader({ onFileUpload, isLoading }: CSVUploaderProp
     setIsDragging(false);
     
     const file = e.dataTransfer.files?.[0];
+    console.log('File dropped:', file?.name);
     if (file && file.name.endsWith('.csv')) {
       setFileName(file.name);
       onFileUpload(file);
     } else {
+      console.error('Invalid file type');
       alert('Please upload a valid CSV file');
     }
   };

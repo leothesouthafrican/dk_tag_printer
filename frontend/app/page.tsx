@@ -39,7 +39,13 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const getApiBase = () => {
+  if (typeof window === 'undefined') return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const host = window.location.hostname;
+  if (host.endsWith('leo-figueiredo.com')) return 'https://tags-api.leo-figueiredo.com';
+  return `http://${host}:8000`;
+};
+      const apiUrl = getApiBase();
       const response = await axios.post(`${apiUrl}/api/upload-csv`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',

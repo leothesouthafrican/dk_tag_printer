@@ -11,7 +11,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000"],
+    allow_origins=["http://localhost:3000", "http://frontend:3000", "http://localhost:3001", "https://tags.leo-figueiredo.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
