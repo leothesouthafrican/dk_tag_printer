@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 interface ProductSelectorProps {
   data: any[];
   productCodes: string[];
@@ -19,6 +21,14 @@ export default function ProductSelector({
   selectedPriceColumn,
   onPriceColumnChange,
 }: ProductSelectorProps) {
+  const [search, setSearch] = useState('');
+
+  const filteredCodes = search.trim()
+    ? productCodes.filter((code) =>
+        code.toLowerCase().includes(search.toLowerCase())
+      )
+    : productCodes;
+
   const handleProductToggle = (code: string) => {
     if (selectedProducts.includes(code)) {
       onSelectionChange(selectedProducts.filter((p) => p !== code));
@@ -35,9 +45,27 @@ export default function ProductSelector({
     }
   };
 
+  const handleSelectFiltered = () => {
+    const allFilteredSelected = filteredCodes.every((c) =>
+      selectedProducts.includes(c)
+    );
+    if (allFilteredSelected) {
+      onSelectionChange(
+        selectedProducts.filter((c) => !filteredCodes.includes(c))
+      );
+    } else {
+      const merged = Array.from(new Set([...selectedProducts, ...filteredCodes]));
+      onSelectionChange(merged);
+    }
+  };
+
   const filteredData = data.filter((row) =>
     selectedProducts.includes(row.ProductCode)
   );
+
+  const allFilteredSelected =
+    filteredCodes.length > 0 &&
+    filteredCodes.every((c) => selectedProducts.includes(c));
 
   return (
     <div className="space-y-6">
@@ -82,26 +110,70 @@ export default function ProductSelector({
             {selectedProducts.length === productCodes.length ? 'Clear All' : 'Select All'}
           </button>
         </div>
-        
-        <div className="max-h-80 overflow-y-auto space-y-2 mb-4">
-          {productCodes.map((code) => (
-            <label
-              key={code}
-              className="flex items-center p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group"
+
+        {/* Search input */}
+        <div className="relative mb-3">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search references…"
+            className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg leading-none"
             >
-              <input
-                type="checkbox"
-                checked={selectedProducts.includes(code)}
-                onChange={() => handleProductToggle(code)}
-                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="ml-3 text-sm font-medium text-slate-700 group-hover:text-slate-900">
-                {code}
-              </span>
-            </label>
-          ))}
+              ×
+            </button>
+          )}
         </div>
-        
+
+        {/* Select-filtered shortcut */}
+        {search.trim() && filteredCodes.length > 0 && (
+          <div className="flex justify-between items-center mb-2 text-xs text-slate-500">
+            <span>{filteredCodes.length} match{filteredCodes.length !== 1 ? 'es' : ''}</span>
+            <button
+              onClick={handleSelectFiltered}
+              className="text-blue-600 hover:underline font-medium"
+            >
+              {allFilteredSelected ? 'Deselect matches' : 'Select all matches'}
+            </button>
+          </div>
+        )}
+
+        <div className="max-h-80 overflow-y-auto space-y-1 mb-4">
+          {filteredCodes.length === 0 ? (
+            <p className="text-sm text-slate-400 py-4 text-center">No references match "{search}"</p>
+          ) : (
+            filteredCodes.map((code) => (
+              <label
+                key={code}
+                className="flex items-center p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedProducts.includes(code)}
+                  onChange={() => handleProductToggle(code)}
+                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="ml-3 text-sm font-medium text-slate-700 group-hover:text-slate-900">
+                  {code}
+                </span>
+              </label>
+            ))
+          )}
+        </div>
+
         <div className="flex items-center justify-between pt-4 border-t border-slate-200 text-sm">
           <span className="text-slate-600">Selected:</span>
           <span className="font-semibold text-blue-600">
