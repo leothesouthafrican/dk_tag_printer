@@ -1,60 +1,16 @@
-name: Deploy to Raspberry Pi
+name: Deploy to Coolify
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch: {}
+    branches: [main]
 
 jobs:
   deploy:
-    # Run this job on your Raspberry Pi self-hosted runner
-    runs-on: [self-hosted, linux, rpi]
-
+    runs-on: self-hosted
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Print context
+      - name: Deploy backend
         run: |
-          uname -a
-          pwd
-          ls -la
-
-      - name: Ensure Docker/Compose present
+          curl -s -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"             "http://localhost:8000/api/v1/deploy?uuid=pskswsc8c0044ggo40go4og0"
+      - name: Deploy frontend
         run: |
-          set -e
-          if ! command -v docker >/dev/null 2>&1; then
-            sudo apt-get update -y
-            sudo apt-get install -y docker.io
-            sudo usermod -aG docker $USER || true
-          fi
-          if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
-            sudo apt-get update -y
-            sudo apt-get install -y docker-compose
-          fi
-
-      - name: Make deploy helper executable (if present)
-        run: |
-          if [ -f ./cf-compose-deploy.sh ]; then chmod +x ./cf-compose-deploy.sh; fi
-
-      - name: Deploy with Cloudflare (preferred)
-        env:
-          CF_DOMAIN: leo-figueiredo.com   # override in repo/Org secrets if needed
-        run: |
-          set -e
-          if [ -f ./cf-compose-deploy.sh ]; then
-            ./cf-compose-deploy.sh
-          else
-            echo "cf-compose-deploy.sh not found; falling back to simple docker compose up"
-            if command -v docker-compose >/dev/null 2>&1; then
-              docker-compose up -d --build
-            else
-              docker compose up -d --build
-            fi
-          fi
-
-      - name: Show running services
-        run: |
-          (docker compose ps || docker-compose ps) || true
+          curl -s -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"             "http://localhost:8000/api/v1/deploy?uuid=f080ossg88ows8k8csw40c4s"
