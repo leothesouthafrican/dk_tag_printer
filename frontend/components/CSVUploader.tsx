@@ -41,6 +41,7 @@ export default function CSVUploader({ onFileUpload, isLoading }: CSVUploaderProp
 
   return (
     <div
+      data-tour="upload"
       role="button"
       tabIndex={0}
       onClick={openPicker}

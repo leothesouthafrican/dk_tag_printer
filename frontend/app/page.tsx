@@ -9,6 +9,7 @@ import CSVUploader from '@/components/CSVUploader';
 import ConfigPanel from '@/components/ConfigPanel';
 import ProductSelector from '@/components/ProductSelector';
 import PDFGenerator from '@/components/PDFGenerator';
+import Tour from '@/components/Tour';
 
 interface TagConfig {
   portrait_landscape: string;
@@ -101,7 +102,8 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-7xl p-4 lg:px-8">
       <header className="relative mb-8 pt-4 text-center">
-        <div className="absolute right-0 top-4">
+        <div className="absolute right-0 top-4 flex items-center gap-2">
+          <Tour />
           <ThemeToggle />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">DasKasas Tag Tool</h1>
