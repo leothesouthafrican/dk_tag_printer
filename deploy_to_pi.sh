@@ -6,7 +6,7 @@
 set -e
 
 PI_HOST="${1:-rpi}"
-DEPLOY_DIR="/home/leo/dk_tag_printer"
+DEPLOY_DIR="/home/leo/projects/dk-tag-printer"
 
 echo "===== Deploying DasKasas Tag Tool to Raspberry Pi ====="
 echo "Target: $PI_HOST"
