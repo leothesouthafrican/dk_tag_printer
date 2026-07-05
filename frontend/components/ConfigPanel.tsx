@@ -45,7 +45,7 @@ export default function ConfigPanel({ config, onConfigChange }: ConfigPanelProps
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-6">
+    <div data-tour="config" className="rounded-xl border border-border bg-card p-5 space-y-6">
       <div className="flex items-center gap-2">
         <Settings2 className="h-4 w-4 text-muted-foreground" />
         <h2 className="text-base font-medium">Tag Configuration</h2>
@@ -154,7 +154,7 @@ export default function ConfigPanel({ config, onConfigChange }: ConfigPanelProps
       </section>
 
       {/* Section 2: Sticker-sheet alignment */}
-      <section className="space-y-4 border-t border-border pt-5">
+      <section data-tour="alignment" className="space-y-4 border-t border-border pt-5">
         <div>
           <h3 className="text-sm font-semibold">Sticker-sheet alignment</h3>
           <p className={helperClass}>
@@ -215,7 +215,7 @@ export default function ConfigPanel({ config, onConfigChange }: ConfigPanelProps
       </section>
 
       {/* Live preview */}
-      <section className="space-y-3 border-t border-border pt-5">
+      <section data-tour="preview" className="space-y-3 border-t border-border pt-5">
         <h3 className="text-sm font-semibold">Preview</h3>
         <SheetPreview
           leftMargin={config.left_margin}
