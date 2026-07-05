@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
@@ -8,10 +10,15 @@ app = FastAPI(
     version="2.0.0"
 )
 
+# CORS origins: defaults cover local dev; prod/dev deploys append their public
+# frontend origin via the comma-separated CORS_ORIGINS env var.
+_default_origins = ["http://localhost:3000", "http://frontend:3000"]
+_env_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000", "http://localhost:3001", "https://tags.leo-figueiredo.com"],
+    allow_origins=_default_origins + _env_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

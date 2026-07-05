@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ProductSelectorProps {
   data: any[];
@@ -12,6 +14,9 @@ interface ProductSelectorProps {
   onPriceColumnChange: (column: string) => void;
 }
 
+const inputClass =
+  'h-9 w-full rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50';
+
 export default function ProductSelector({
   data,
   productCodes,
@@ -21,13 +26,13 @@ export default function ProductSelector({
   selectedPriceColumn,
   onPriceColumnChange,
 }: ProductSelectorProps) {
-  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
 
-  const filteredCodes = search.trim()
-    ? productCodes.filter((code) =>
-        code.toLowerCase().includes(search.toLowerCase())
-      )
-    : productCodes;
+  const filteredCodes = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return productCodes;
+    return productCodes.filter((code) => code.toLowerCase().includes(q));
+  }, [productCodes, query]);
 
   const handleProductToggle = (code: string) => {
     if (selectedProducts.includes(code)) {
@@ -37,52 +42,28 @@ export default function ProductSelector({
     }
   };
 
-  const handleSelectAll = () => {
-    if (selectedProducts.length === productCodes.length) {
-      onSelectionChange([]);
-    } else {
-      onSelectionChange(productCodes);
-    }
-  };
-
-  const handleSelectFiltered = () => {
-    const allFilteredSelected = filteredCodes.every((c) =>
-      selectedProducts.includes(c)
-    );
-    if (allFilteredSelected) {
-      onSelectionChange(
-        selectedProducts.filter((c) => !filteredCodes.includes(c))
-      );
-    } else {
-      const merged = Array.from(new Set([...selectedProducts, ...filteredCodes]));
-      onSelectionChange(merged);
-    }
-  };
-
-  const filteredData = data.filter((row) =>
-    selectedProducts.includes(row.ProductCode)
-  );
-
+  // Select All acts on the currently filtered set.
   const allFilteredSelected =
-    filteredCodes.length > 0 &&
-    filteredCodes.every((c) => selectedProducts.includes(c));
+    filteredCodes.length > 0 && filteredCodes.every((code) => selectedProducts.includes(code));
+
+  const handleSelectAll = () => {
+    if (allFilteredSelected) {
+      onSelectionChange(selectedProducts.filter((code) => !filteredCodes.includes(code)));
+    } else {
+      onSelectionChange(Array.from(new Set([...selectedProducts, ...filteredCodes])));
+    }
+  };
+
+  const filteredData = data.filter((row) => selectedProducts.includes(row.ProductCode));
 
   return (
     <div className="space-y-6">
-      {/* Price Column Selection */}
-      <div className="glass-card rounded-2xl p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="p-2 bg-emerald-100 rounded-lg">
-            <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-slate-800">Price Column</h3>
-        </div>
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="mb-3 text-sm font-semibold">Price Column</h3>
         <select
           value={selectedPriceColumn}
           onChange={(e) => onPriceColumnChange(e.target.value)}
-          className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium"
+          className={inputClass}
         >
           {priceColumns.map((col) => (
             <option key={col} value={col}>
@@ -92,130 +73,83 @@ export default function ProductSelector({
         </select>
       </div>
 
-      {/* Product Selection */}
-      <div className="glass-card rounded-2xl p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-800">Select Products</h3>
-          </div>
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Select Products</h3>
           <button
             onClick={handleSelectAll}
-            className="btn-secondary text-sm"
+            disabled={filteredCodes.length === 0}
+            className="h-8 rounded-lg border border-input bg-transparent px-3 text-sm font-medium transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
           >
-            {selectedProducts.length === productCodes.length ? 'Clear All' : 'Select All'}
+            {allFilteredSelected ? 'Deselect All' : 'Select All'}
           </button>
         </div>
 
-        {/* Search input */}
         <div className="relative mb-3">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-          </svg>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search references…"
-            className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search product codes…"
+            className={`${inputClass} pl-9`}
           />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg leading-none"
-            >
-              ×
-            </button>
-          )}
         </div>
 
-        {/* Select-filtered shortcut */}
-        {search.trim() && filteredCodes.length > 0 && (
-          <div className="flex justify-between items-center mb-2 text-xs text-slate-500">
-            <span>{filteredCodes.length} match{filteredCodes.length !== 1 ? 'es' : ''}</span>
-            <button
-              onClick={handleSelectFiltered}
-              className="text-blue-600 hover:underline font-medium"
-            >
-              {allFilteredSelected ? 'Deselect matches' : 'Select all matches'}
-            </button>
-          </div>
-        )}
-
-        <div className="max-h-80 overflow-y-auto space-y-1 mb-4">
+        <div className="max-h-64 space-y-1 overflow-y-auto">
           {filteredCodes.length === 0 ? (
-            <p className="text-sm text-slate-400 py-4 text-center">No references match "{search}"</p>
+            <p className="px-2 py-4 text-center text-sm text-muted-foreground">No matches</p>
           ) : (
             filteredCodes.map((code) => (
               <label
                 key={code}
-                className="flex items-center p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group"
+                className="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-muted/50"
               >
                 <input
                   type="checkbox"
                   checked={selectedProducts.includes(code)}
                   onChange={() => handleProductToggle(code)}
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="ml-3 text-sm font-medium text-slate-700 group-hover:text-slate-900">
-                  {code}
-                </span>
+                <span className="text-sm">{code}</span>
               </label>
             ))
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200 text-sm">
-          <span className="text-slate-600">Selected:</span>
-          <span className="font-semibold text-blue-600">
-            {selectedProducts.length} of {productCodes.length}
-          </span>
+        <div className="mt-3 text-sm text-muted-foreground">
+          {selectedProducts.length} of {productCodes.length} products selected
         </div>
       </div>
 
-      {/* Preview */}
       {filteredData.length > 0 && (
-        <div className="glass-card rounded-2xl p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-800">Preview</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="mb-3 text-sm font-semibold">Selected Products Preview</h3>
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="min-w-full text-sm">
               <thead>
-                <tr>
-                  {Object.keys(filteredData[0]).slice(0, 5).map((key) => (
-                    <th
-                      key={key}
-                      className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider bg-slate-50 rounded-t-lg"
-                    >
-                      {key}
-                    </th>
-                  ))}
+                <tr className="border-b border-border">
+                  {Object.keys(filteredData[0])
+                    .slice(0, 5)
+                    .map((key) => (
+                      <th
+                        key={key}
+                        className="px-4 py-2 text-left text-xs font-medium uppercase text-muted-foreground"
+                      >
+                        {key}
+                      </th>
+                    ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {filteredData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                    {Object.values(row).slice(0, 5).map((value: any, colIdx) => (
-                      <td key={colIdx} className="px-4 py-3 text-sm text-slate-700">
-                        {String(value)}
-                      </td>
-                    ))}
+                  <tr key={idx} className={cn('hover:bg-muted/50')}>
+                    {Object.values(row)
+                      .slice(0, 5)
+                      .map((value: any, colIdx) => (
+                        <td key={colIdx} className="px-4 py-2">
+                          {String(value)}
+                        </td>
+                      ))}
                   </tr>
                 ))}
               </tbody>

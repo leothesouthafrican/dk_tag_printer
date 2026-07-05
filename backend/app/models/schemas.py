@@ -9,6 +9,9 @@ class TagConfig(BaseModel):
     font_size: int
     max_characters: int
     auto_max_characters: bool
+    left_margin: float = 7.5    # NEW: page left margin (mm)
+    top_margin: float = 10.0    # NEW: page top margin (mm)
+    inner_padding: float = 2.0  # NEW: horizontal inset of content within each tag (mm)
 
 
 class CSVUploadResponse(BaseModel):

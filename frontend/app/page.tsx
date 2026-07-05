@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FileText, Moon, Sun } from 'lucide-react';
+import { toast } from 'sonner';
 import CSVUploader from '@/components/CSVUploader';
 import ConfigPanel from '@/components/ConfigPanel';
 import ProductSelector from '@/components/ProductSelector';
@@ -14,6 +16,37 @@ interface TagConfig {
   font_size: number;
   max_characters: number;
   auto_max_characters: boolean;
+  left_margin: number;
+  top_margin: number;
+  inner_padding: number;
+}
+
+function ThemeToggle() {
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    const isDark = stored === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    setDark(isDark);
+  }, []);
+
+  const toggle = () => {
+    const next = !dark;
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+    setDark(next);
+  };
+
+  return (
+    <button
+      onClick={toggle}
+      aria-label="Toggle theme"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-input bg-transparent transition-colors hover:bg-accent"
+    >
+      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
+  );
 }
 
 export default function Home() {
@@ -23,14 +56,17 @@ export default function Home() {
   const [productCodes, setProductCodes] = useState<string[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectedPriceColumn, setSelectedPriceColumn] = useState<string>('');
-  
+
   const [config, setConfig] = useState<TagConfig>({
     portrait_landscape: 'P',
-    tag_height: 34,
-    tag_width: 60,
+    tag_height: 39.5,
+    tag_width: 65,
     font_size: 8,
-    max_characters: 37,
+    max_characters: 40,
     auto_max_characters: false,
+    left_margin: 7.5,
+    top_margin: 10,
+    inner_padding: 2,
   });
 
   const handleFileUpload = async (file: File) => {
@@ -39,13 +75,7 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-      const getApiBase = () => {
-  if (typeof window === 'undefined') return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  const host = window.location.hostname;
-  if (host.endsWith('leo-figueiredo.com')) return 'https://tags-api.leo-figueiredo.com';
-  return `http://${host}:8000`;
-};
-      const apiUrl = getApiBase();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await axios.post(`${apiUrl}/api/upload-csv`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -55,53 +85,48 @@ export default function Home() {
       setCsvData(response.data.data);
       setPriceColumns(response.data.price_columns);
       setProductCodes(response.data.product_codes);
-      setSelectedPriceColumn(response.data.price_columns[4] || response.data.price_columns[0] || '');
+      setSelectedPriceColumn(
+        response.data.price_columns[4] || response.data.price_columns[0] || ''
+      );
       setSelectedProducts([]);
     } catch (error) {
       console.error('Error uploading CSV:', error);
-      alert('Error uploading CSV file. Please try again.');
+      toast.error('Error uploading CSV file. Please try again.');
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-block mb-4">
-            <div className="flex items-center justify-center w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl shadow-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
-          </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 bg-clip-text text-transparent mb-3">
-            DasKasas Tag Tool
-          </h1>
-          <p className="text-slate-600 text-lg max-w-2xl mx-auto">
-            Generate professional price tags from DEAR Inventory exports
-          </p>
+    <main className="mx-auto w-full max-w-7xl p-4 lg:px-8">
+      <header className="relative mb-8 pt-4 text-center">
+        <div className="absolute right-0 top-4">
+          <ThemeToggle />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">DasKasas Tag Tool</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Generate custom price tags from DEAR Inventory CSV exports
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1 lg:sticky lg:top-6 self-start">
+          <ConfigPanel config={config} onConfigChange={setConfig} />
         </div>
 
-        {/* Upload Section */}
-        <div className="mb-8 glass-card rounded-2xl p-8 transition-all duration-300 hover:shadow-xl">
+        <div className="space-y-6 lg:col-span-2">
           <CSVUploader onFileUpload={handleFileUpload} isLoading={isUploading} />
-        </div>
 
-        {/* Main Content */}
-        {csvData.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Configuration Panel */}
-            <div className="lg:col-span-4">
-              <div className="sticky top-8">
-                <ConfigPanel config={config} onConfigChange={setConfig} />
-              </div>
+          {csvData.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-10 text-center">
+              <FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">No file yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload a DEAR Inventory CSV export to pick products and generate tags.
+              </p>
             </div>
-
-            {/* Product Selection & Generation */}
-            <div className="lg:col-span-8 space-y-6">
+          ) : (
+            <>
               <ProductSelector
                 data={csvData}
                 productCodes={productCodes}
@@ -113,31 +138,16 @@ export default function Home() {
               />
 
               {selectedProducts.length > 0 && (
-                <div className="glass-card rounded-2xl p-6 transition-all duration-300 hover:shadow-xl">
-                  <PDFGenerator
-                    csvData={csvData}
-                    selectedProducts={selectedProducts}
-                    priceColumn={selectedPriceColumn}
-                    config={config}
-                  />
-                </div>
+                <PDFGenerator
+                  csvData={csvData}
+                  selectedProducts={selectedProducts}
+                  priceColumn={selectedPriceColumn}
+                  config={config}
+                />
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {csvData.length === 0 && !isUploading && (
-          <div className="text-center py-20">
-            <div className="inline-block p-6 bg-slate-100 rounded-full mb-4">
-              <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-slate-700 mb-2">Upload a CSV to get started</h3>
-            <p className="text-slate-500">Select your DEAR Inventory export file above</p>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </main>
   );
