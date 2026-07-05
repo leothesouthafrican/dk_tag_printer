@@ -8,6 +8,20 @@ from app.services.pdf_generator import PDFGenerator
 router = APIRouter()
 
 
+def numeric_price_columns(df: pd.DataFrame) -> list[str]:
+    """Price-named columns whose values are actually numeric.
+
+    Keeps the UI from offering text columns like "Default Price Tier" or
+    "Price Regime" (values "Standard"/"Premium") that would crash PDF
+    generation when multiplied by the markup.
+    """
+    return [
+        col
+        for col in df.filter(regex="Price").columns
+        if pd.to_numeric(df[col], errors="coerce").notna().mean() >= 0.5
+    ]
+
+
 @router.post("/upload-csv", response_model=CSVUploadResponse)
 async def upload_csv(file: UploadFile = File(...)):
     """
@@ -21,8 +35,8 @@ async def upload_csv(file: UploadFile = File(...)):
         contents = await file.read()
         df = pd.read_csv(StringIO(contents.decode('utf-8')))
         
-        # Get price columns
-        price_columns = df.filter(regex='Price').columns.tolist()
+        # Get price columns (numeric only — a text column would 500 the PDF step)
+        price_columns = numeric_price_columns(df)
         
         # Get unique product codes
         product_codes = df['ProductCode'].unique().tolist() if 'ProductCode' in df.columns else []
@@ -54,19 +68,36 @@ async def generate_pdf(request: PDFGenerateRequest):
         
         if df.empty:
             raise HTTPException(status_code=400, detail="No products selected or found")
-        
+
+        # Validate the chosen price column is present and numeric, else the
+        # markup multiply in generate_tags would raise and surface as a 500.
+        if request.price_column not in df.columns:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Price column '{request.price_column}' not found",
+            )
+        prices = pd.to_numeric(df[request.price_column], errors="coerce")
+        if prices.isna().all():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Price column '{request.price_column}' isn't numeric",
+            )
+        df[request.price_column] = prices
+
         # Reset index
         df = df.reset_index(drop=True)
-        
+
         # Generate PDF
         generator = PDFGenerator(request.config)
         pdf_bytes = generator.generate_tags(df, request.price_column)
-        
+
         # Return PDF as streaming response
         return StreamingResponse(
             BytesIO(pdf_bytes),
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=PriceTags.pdf"}
         )
+    except HTTPException:
+        raise  # don't let the 400s above get swallowed into a 500
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
