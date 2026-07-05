@@ -2,6 +2,8 @@
 
 import axios from 'axios';
 import { useState } from 'react';
+import { Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TagConfig {
   portrait_landscape: string;
@@ -10,6 +12,9 @@ interface TagConfig {
   font_size: number;
   max_characters: number;
   auto_max_characters: boolean;
+  left_margin: number;
+  top_margin: number;
+  inner_padding: number;
 }
 
 interface PDFGeneratorProps {
@@ -26,16 +31,14 @@ export default function PDFGenerator({
   config,
 }: PDFGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (selectedProducts.length === 0) {
-      alert('Please select at least one product');
+      toast.error('Please select at least one product');
       return;
     }
 
     setIsGenerating(true);
-    setError(null);
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -61,32 +64,34 @@ export default function PDFGenerator({
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      toast.success('PDF downloaded');
     } catch (err: any) {
       console.error('Error generating PDF:', err);
-      setError(err.response?.data?.detail || 'Failed to generate PDF. Please try again.');
+      toast.error(err.response?.data?.detail || 'Failed to generate PDF. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="rounded-xl border border-border bg-card p-5">
       <button
         onClick={handleGenerate}
         disabled={isGenerating || selectedProducts.length === 0}
-        className={`w-full py-3 px-4 rounded-lg font-semibold text-white ${
-          isGenerating || selectedProducts.length === 0
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-green-600 hover:bg-green-700'
-        }`}
+        className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
       >
-        {isGenerating ? 'Generating PDF...' : 'Generate & Download PDF'}
+        {isGenerating ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Generating PDF…
+          </>
+        ) : (
+          <>
+            <Download className="h-4 w-4" />
+            Generate &amp; Download PDF
+          </>
+        )}
       </button>
-      {error && (
-        <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
-          {error}
-        </div>
-      )}
     </div>
   );
 }
