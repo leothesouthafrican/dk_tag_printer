@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FileText, Moon, Sun } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiBase } from '@/lib/api';
 import CSVUploader from '@/components/CSVUploader';
 import ConfigPanel from '@/components/ConfigPanel';
 import ProductSelector from '@/components/ProductSelector';
@@ -75,7 +76,7 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = getApiBase();
       const response = await axios.post(`${apiUrl}/api/upload-csv`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
