@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiBase } from '@/lib/api';
 
 interface TagConfig {
   portrait_landscape: string;
@@ -41,7 +42,7 @@ export default function PDFGenerator({
     setIsGenerating(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = getApiBase();
       const response = await axios.post(
         `${apiUrl}/api/generate-pdf`,
         {
